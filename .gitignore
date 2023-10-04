@@ -1,0 +1,15 @@
+.vscode/
+*.exe
+*.dSYM
+*.cppWithExt
+*.cppWithExt********
+*.DS_Store
+*.class
+*.tmp
+*.tempCodeRunnerFile*
+*.trash
+tempCodeRunnerFile*
+tempCodeRunnerFile.py
+tempCodeRunnerFile.cpp
+__pycache__/
+build
