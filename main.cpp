@@ -6,14 +6,13 @@
 #include <vector>
 #include "src/nfa.cpp"
 
-
 int main() {
   if (interface_output) {
     std::cout << "!the initial automaton vertex should have number 0\n";
-    std::cout << "Input number of vertexes: ";
+    std::cout << "Input number of vertices: ";
   }
-  long long vertexes; std::cin >> vertexes;
-  DFA nfa(vertexes);
+  int vertices; std::cin >> vertices;
+  DFA nfa(vertices);
   nfa.ReadNFA();
   std::cout << "===========\n\ninitializing eps-removing algorithm\n";
   nfa.RemoveEps();

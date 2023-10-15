@@ -1,0 +1,42 @@
+--- test on NFA + NFA
+
+2
+0 1 b
+1 2 a
+1
+2
+
+2
+0 1 a
+1 2 b
+1
+2
+
+--- test on NFA * NFA
+
+3
+0 1 b
+1 2 a
+1 3 c
+2
+2 3
+
+2
+0 1 a
+1 2 b
+1
+2
+
+--- test on *NFA
+3
+0 1 b
+1 2 a
+1 3 c
+2
+2 3
+
+
+-- regex test
+
+ab+c.aba.*.bac.+.+* a 2 -> YES
+aba.*.a.*ab1+.. a 2 -> YES

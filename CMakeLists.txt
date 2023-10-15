@@ -6,4 +6,5 @@ project(nfa_to_min_pdfa_transform
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(startMe main.cpp src/nfa.cpp)
+add_executable(startMe main.cpp)
+add_executable(practical practical_work.cpp)

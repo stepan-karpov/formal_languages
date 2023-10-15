@@ -2,33 +2,40 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 
 // usefull tool: https://csacademy.com/app/graph_editor/
 
 // symbol ` means eps
-const std::string kAlph = "`abcdef";
+const std::string kAlph = "`abc";
 
 const bool interface_output = false;
+
+struct NFA;
+NFA operator+(const NFA& first, const NFA& second);
+NFA operator*(const NFA& first, const NFA& second);
+NFA operator*(const NFA& first);
+
 // no bitmasks optimizations
-// to support any number of vertexes/edges
+// to support any number of vertices/edges
 struct NFA {
   struct Node {
-    std::map<char, std::set<long long>> edges;
-    long long output_power = 0;
+    std::map<char, std::set<int>> edges;
+    int output_power = 0;
     bool is_terminal = 0;
 
-    void AddEdge(long long v, char symb) {
+    void AddEdge(int v, char symb) {
       if (edges[symb].find(v) == edges[symb].end()) {
         ++output_power;
       }
       edges[symb].insert(v);
     }
 
-    void OutputEdges(long long me) {
+    void OutputEdges(int me) {
       for (auto edge : edges) {
-        for (long long to : edge.second) {
+        for (int to : edge.second) {
           std::cout << me << " " << to << " " << edge.first << "\n";
         }
       }
@@ -41,11 +48,11 @@ struct NFA {
     }
 
     Node(const Node& old_node,
-         const std::map<long long, long long>& compressed_coords) {
+         const std::map<int, int>& compressed_coords) {
       is_terminal = old_node.is_terminal;
       for (auto edge : old_node.edges) {
         edges[edge.first] = {};
-        for (long long to : edge.second) {
+        for (int to : edge.second) {
           if (compressed_coords.contains(to)) {
             edges[edge.first].insert(compressed_coords.at(to));
             ++output_power;
@@ -67,19 +74,19 @@ struct NFA {
 
   std::vector<Node> nodes;
 
-  void MarkupDFS(long long vertex, std::vector<bool>& used) {
+  void MarkupDFS(int vertex, std::vector<bool>& used) {
     if (used[vertex]) { return; }
     used[vertex] = true;
     for (auto edge : nodes[vertex].edges) {
       if (edge.second.empty()) { continue; }
-      for (long long to : edge.second) {
+      for (int to : edge.second) {
         MarkupDFS(to, used);
       }
     }
   }
 
-  void EpsDFS(long long current_vertex, long long parent,
-              std::set<long long>& used) {
+  void EpsDFS(int current_vertex, int parent,
+              std::set<int>& used) {
     if (nodes[current_vertex].is_terminal) {
       nodes[parent].is_terminal = true;
     }
@@ -91,12 +98,12 @@ struct NFA {
     for (auto edge : current_node.edges) {
       if (edge.second.empty()) { continue; } // debug usefull
       if (edge.first == '`') {
-        for (long long to : edge.second) {
+        for (int to : edge.second) {
           EpsDFS(to, parent, used);
         }
         edge.second.clear();
       } else {
-        for (long long to : edge.second) {
+        for (int to : edge.second) {
           nodes[parent].edges[edge.first].insert(to);
         }
       }
@@ -110,10 +117,10 @@ struct NFA {
     std::vector<bool> used(nodes.size(), false);
     MarkupDFS(0, used);
 
-    std::map<long long, long long> compressed_coords;
+    std::map<int, int> compressed_coords;
 
-    long long pointer = 0;
-    for (long long i = 0; i < nodes.size(); ++i) {
+    int pointer = 0;
+    for (int i = 0; i < nodes.size(); ++i) {
       bool skip =
         !used[i] || (!nodes[i].is_terminal && nodes[i].output_power == 0);
       if (!skip) {
@@ -138,7 +145,7 @@ struct NFA {
       std::cout << "\n";
       std::cout << "Input number of edges: ";
     }
-    long long edges; std::cin >> edges;
+    int edges; std::cin >> edges;
     if (interface_output) {
       std::cout << "Input NFA's edges in the following format:\n";
       std::cout << "$number1$ $number2$ $letter$, where\n";
@@ -147,17 +154,17 @@ struct NFA {
       std::cout << "$letter$ - letter from alphabet (kAlph in code)\n\n";
     }
 
-    for (long long i = 0; i < edges; ++i) {
-      long long u, v; char word;
+    for (int i = 0; i < edges; ++i) {
+      int u, v; char word;
       std::cin >> u >> v >> word;
       nodes[u].AddEdge(v, word);
     }
     if (interface_output) {
-      std::cout << "Input number of terminal vertexes: ";
+      std::cout << "Input number of terminal vertices: ";
     }
-    long long terminal; std::cin >> terminal;
-    for (long long i = 0; i < terminal; ++i) {
-      long long u; std::cin >> u;
+    int terminal; std::cin >> terminal;
+    for (int i = 0; i < terminal; ++i) {
+      int u; std::cin >> u;
       nodes[u].is_terminal = true;
     }
     ClearUseless(); // legacy code
@@ -165,24 +172,24 @@ struct NFA {
 
   void RemoveEps() {
     for (size_t i = 0; i < nodes.size(); ++i) {
-      std::set<long long> used;
+      std::set<int> used;
       EpsDFS(i, i, used);
     }
   }
 
   void OutputGraph() {
     ClearUseless();
-    std::cout << "Number of vertexes: " << nodes.size() << "\n";
+    std::cout << "Number of vertices: " << nodes.size() << "\n";
     std::cout << "Edges: " << "\n";
-    std::set<long long> terminals;
-    for (long long i = 0; i < nodes.size(); ++i ){
+    std::set<int> terminals;
+    for (int i = 0; i < nodes.size(); ++i ){
       nodes[i].OutputEdges(i);
       if (nodes[i].is_terminal) {
         terminals.insert(i);
       }
     }
 
-    std::cout << "\nNumber of terminal vertexes: ";
+    std::cout << "\nNumber of terminal vertices: ";
     std::cout << terminals.size() << "\n";
 
     for (auto term_vertex : terminals) {
@@ -232,16 +239,51 @@ struct NFA {
     return DFSRecognize(0, 0, word, used);
   }
 
+  NFA(char symb) {
+    assert(symb != '`' && "cringe in NFA from symbol constructor");
+      nodes.push_back(Node());
+    if (symb != '1') { // symb in kAlph \ '`'
+      nodes.push_back(Node());
+      nodes[0].AddEdge(1, symb);
+      nodes[1].is_terminal = true;
+    } else {
+      nodes[0].is_terminal = true;
+    }
+  }
+
+  // builds NFA by regex in reverse Polish notation
+  NFA(std::string regex) {
+    std::stack<NFA> stack;
+
+    for (size_t i = 0; i < regex.size(); ++i) {
+      if (regex[i] == '.') {
+        NFA second = stack.top(); stack.pop();
+        NFA first = stack.top(); stack.pop();
+        stack.push(first * second);
+      } else if (regex[i] == '*') {
+        NFA last = stack.top(); stack.pop();
+        stack.push(*last);
+      } else if (regex[i] == '+') {
+        NFA second = stack.top(); stack.pop();
+        NFA first = stack.top(); stack.pop();
+        stack.push(first + second);
+      } else { // regex[i] == 'a' | 'b' | 'c' | '1'
+        stack.push(NFA(regex[i]));
+      }
+    }
+    *this = stack.top();
+  }
+
   NFA(std::vector<ThompsonNode>& new_nodes) {
     nodes.reserve(new_nodes.size());
     for (size_t i = 0; i < new_nodes.size(); ++i) {
       nodes.push_back(new_nodes[i]);
     }
   }
-  NFA(long long size) { nodes.assign(size, Node()); }
-  ~NFA() = default;
+  NFA(int size) { nodes.assign(size, Node()); }
   NFA(const NFA& other) = default;
-  NFA(NFA&& other) = default;
+  // NFA(NFA&& other) = default;
+  ~NFA() = default;
 };
 
 struct DFA : public NFA {
@@ -328,7 +370,7 @@ struct DFA : public NFA {
     }
   }
 
-  void FindSimularVertexes(
+  void FindSimularvertices(
     std::set<std::pair<int, int>>& storage,
     std::vector<std::map<char, std::set<int>>>& reveresed_edges) {
     std::queue<std::pair<int, int>> pairs;
@@ -386,7 +428,7 @@ struct DFA : public NFA {
       last_size = nodes.size();
       std::vector<std::map<char, std::set<int>>> reveresed_edges(nodes.size());
       std::set<std::pair<int, int>> storage;
-      FindSimularVertexes(storage, reveresed_edges);
+      FindSimularvertices(storage, reveresed_edges);
 
     
       std::vector<bool> deleted(nodes.size());
@@ -409,6 +451,28 @@ struct DFA : public NFA {
     }
   }
 
+  bool DfsCheck(int current_vertex, char symb, int cnt,
+                int k, std::set<std::pair<int, int>>& used, int depth) {
+    if (used.find({current_vertex, cnt}) != used.end()) { return false; }
+    if (depth >= nodes.size() * 10) { return false; }
+    if (cnt % k == 0 && nodes[current_vertex].is_terminal) { return true; }
+    used.insert({current_vertex, cnt});
+    for (auto p : nodes[current_vertex].edges) {
+      for (auto to : p.second) {
+        if (DfsCheck(to, symb, cnt + int(p.first == symb), k, used, depth + 1)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool ConditionTrue(char symb, int k) {
+    std::set<std::pair<int, int>> used;
+    return DfsCheck(0, symb, 0, k, used, 0);
+  }
+
+  DFA(std::string regex) : NFA(regex) {}
   DFA(std::vector<ThompsonNode>& nodes) : NFA(nodes) {}
   DFA(int size) : NFA(size) {}
   ~DFA() = default;
@@ -420,3 +484,68 @@ struct DFA : public NFA {
   }
   DFA(DFA&& other) = default;
 };
+
+NFA operator+(const NFA& first, const NFA& second) {
+  NFA answer(int(first.nodes.size() + second.nodes.size()));
+
+
+  for (size_t i = 0; i < first.nodes.size(); ++i) {
+    answer.nodes[i] = first.nodes[i];
+  }
+  answer.nodes[0].AddEdge(first.nodes.size(), '`');
+  
+  for (int i = 0; i < second.nodes.size(); ++i) {
+    answer.nodes[i + first.nodes.size()] = second.nodes[i];
+    for (auto& p : answer.nodes[i + first.nodes.size()].edges) {
+      std::set<int> new_indexes;
+      for (auto el : p.second) {
+        new_indexes.insert(el + first.nodes.size());
+      }
+      p.second = new_indexes;
+    }
+  }
+
+  return answer;
+}
+
+NFA operator*(const NFA& first, const NFA& second) {
+  NFA answer(int(first.nodes.size() + second.nodes.size()));
+
+  for (size_t i = 0; i < first.nodes.size(); ++i) {
+    answer.nodes[i] = first.nodes[i];
+    if (answer.nodes[i].is_terminal) {
+      answer.nodes[i].is_terminal = false;
+      answer.nodes[i].AddEdge(first.nodes.size(), '`');
+    }
+  }
+  
+  for (int i = 0; i < second.nodes.size(); ++i) {
+    answer.nodes[i + first.nodes.size()] = second.nodes[i];
+    for (auto& p : answer.nodes[i + first.nodes.size()].edges) {
+      std::set<int> new_indexes;
+      for (auto el : p.second) {
+        new_indexes.insert(el + first.nodes.size());
+      }
+      p.second = new_indexes;
+    }
+  }
+
+  return answer;
+}
+
+NFA operator*(const NFA& first) {
+  NFA answer(int(first.nodes.size()));
+
+  for (size_t i = 0; i < first.nodes.size(); ++i) {
+    answer.nodes[i] = first.nodes[i];
+  }
+
+  for (size_t i = 0; i < first.nodes.size(); ++i) {
+    if (answer.nodes[i].is_terminal) {
+      answer.nodes[i].AddEdge(0, '`');
+      answer.nodes[0].AddEdge(i, '`');
+    }
+  }
+
+  return answer;
+}
